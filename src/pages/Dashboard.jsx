@@ -3,7 +3,7 @@ import { Home, Flame, Heart, Sparkles, MoreHorizontal, X } from "lucide-react";
 import { C, serif, sans, script, grain, bgGradient } from "../constants";
 import VennLogo from "../components/VennLogo";
 import { Aura } from "../components/ui";
-import Sidebar from "./Sidebar";
+import Sidebar from "./SideBar";
 import { NAV } from "./nav";
 import DashboardScreen from "./DashboardScreen";
 import MoodLogScreen from "./MoodLogScreen";
