@@ -1,0 +1,1092 @@
+/* ─────────────────────────────────────────────────────────────
+   WellSpace — global design system
+   Warm, calm, motivating. Headspace meets tarot.
+   Grounded, intentional, never clinical. Safe, cozy digital space.
+
+   The five-color palette:
+     Off White    #FAFAF8  — base background
+     Buttercream  #FFF8BD  — cards, surfaces
+     Burnt Orange #F26200  — primary buttons, accents
+     Baby Blue    #D6E8FD  — secondary sections
+     Olive Green  #6B7A3A  — secondary buttons, accents
+
+   Grain texture lives on BACKGROUNDS only — it is painted into the
+   backdrop layers (see `body`, `.ws-bg`, `pageBg`), never laid over
+   cards or text.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Palette — pale sage-butter room, dusty-plum night */
+  --off-white: #f1f4dc; /* sage-butter ground */
+  --buttercream: #fff8bd; /* cards, surfaces */
+  --butter-deep: #c08a1c; /* readable butter-gold on light */
+  --butter-soft: #fbf0c4; /* pale butter tint */
+  --burnt-orange: #f26200; /* accent, not primary */
+  --orange-soft: #ffe9db; /* peach wash */
+  --baby-blue: #d6e8fd; /* secondary sections */
+  --blue-deep: #6e97c9; /* readable blue on light */
+  --olive: #6b7a3a; /* secondary buttons, accents */
+  --olive-soft: #ebefdb; /* olive wash */
+
+  /* Paper & ink */
+  --cream: #f3f6df;
+  --paper: #fffef9;
+  --sand: #ecefd5;
+  --ink: #1b1b1f;
+  --muted: #5d5f63;
+  --faint: #9a9c9c;
+  --line: rgba(27, 27, 31, 0.12);
+  --card-line: rgba(255, 255, 255, 0.7);
+
+  /* Night — deep warm cocoa, lit by buttercream starlight */
+  --night: #241812;
+  --night-2: #33251a;
+  --night-3: #45352a;
+  --star: #ffe9a8;
+
+  /* Accent aliases → mapped onto the five-color palette */
+  --gold: #c08a1c;
+  --gold-soft: #fbf0c4;
+  --clay: #f26200;
+  --clay-soft: #ffe9db;
+  --sage: #6b7a3a;
+  --sage-soft: #ebefdb;
+  --sky: #6e97c9;
+  --sky-soft: #d6e8fd;
+  --lavender: #9b8fbd;
+  --lavender-soft: #ecebf2;
+  --rose: #ce7a63;
+  --rose-soft: #f9e4db;
+  --danger: #bf3a1e;
+  --danger-soft: #fbe3d8;
+
+  /* Type */
+  --font-serif: "DM Serif Display", Georgia, serif;
+  --font-script: "Playwrite HR Lijeva", cursive;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Shape & depth — soft, rounded, minimal shadows */
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+  --shadow-soft:
+    0 1px 2px rgba(51, 41, 31, 0.05), 0 10px 28px rgba(51, 41, 31, 0.07);
+  --shadow-lift:
+    0 2px 8px rgba(51, 41, 31, 0.06), 0 24px 56px rgba(51, 41, 31, 0.12);
+  --shadow-night: 0 24px 64px rgba(30, 22, 14, 0.5);
+
+  /* Grain — backgrounds only, painted into backdrop layers */
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+
+  /* Surfaces — swapped wholesale by dark mode */
+  --page-bg: radial-gradient(
+    120% 100% at 50% 0%,
+    #f8f9f3 0%,
+    #f3f5ec 46%,
+    #edf0e2 100%
+  );
+  --glass: rgba(255, 254, 249, 0.72);
+
+  color-scheme: light;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--cream);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+/* The grain layer is part of the page's own background paint —
+   it sits behind every surface, so cards and text stay clean. */
+body {
+  background: var(--grain), var(--page-bg);
+  background-size: 200px, auto;
+  background-attachment: fixed, fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button:focus,
+button:focus-visible,
+button:active,
+.ws-mood-option,
+.ws-mood-option:focus,
+.ws-mood-option:focus-visible,
+.ws-mood-option:hover {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ws-mood-option:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+::selection {
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+/* ── Aura — soft glowing light, the warm haze of the space ──
+   A blurred, slowly-drifting blob. Place one or two per screen at
+   low opacity behind glass cards; never over text. */
+@keyframes ws-aura-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(4%, -3%, 0) scale(1.07);
+  }
+  66% {
+    transform: translate3d(-3%, 2%, 0) scale(0.96);
+  }
+}
+
+.ws-aura {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  will-change: transform;
+  animation: ws-aura-drift 20s ease-in-out infinite;
+}
+
+.ws-aura--gold {
+  background: radial-gradient(
+    circle,
+    rgba(242, 98, 0, 0.2) 0%,
+    rgba(242, 98, 0, 0) 70%
+  );
+}
+.ws-aura--sage {
+  background: radial-gradient(
+    circle,
+    rgba(107, 122, 58, 0.18) 0%,
+    rgba(107, 122, 58, 0) 70%
+  );
+}
+.ws-aura--lavender {
+  background: radial-gradient(
+    circle,
+    rgba(150, 190, 240, 0.24) 0%,
+    rgba(150, 190, 240, 0) 70%
+  );
+}
+.ws-aura--rose {
+  background: radial-gradient(
+    circle,
+    rgba(206, 122, 99, 0.2) 0%,
+    rgba(206, 122, 99, 0) 70%
+  );
+}
+.ws-aura--night {
+  background: radial-gradient(
+    circle,
+    rgba(255, 233, 168, 0.2) 0%,
+    rgba(255, 233, 168, 0) 70%
+  );
+}
+
+/* Grain on top of photos — a whisper of texture so pictures feel
+   like prints, not pixels. Screens blend keeps darks dark. Photos
+   ARE backgrounds, so this is still background-only grain. */
+.ws-photo-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  background-size: 160px;
+  pointer-events: none;
+  opacity: 0.9;
+  mix-blend-mode: overlay;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.ws-mood-option:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Motion ─────────────────────────────────────────────────── */
+@keyframes ws-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ws-rise {
+  animation: ws-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ws-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.ws-float {
+  animation: ws-float 4s ease-in-out infinite;
+}
+
+/* Gentle in-place breathing for the fortune card cover — stays centered so
+   it never drifts over the artwork or crowds the caption below. */
+@keyframes ws-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.ws-breathe {
+  animation: ws-breathe 5s ease-in-out infinite;
+}
+
+@keyframes ws-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.ws-twinkle {
+  animation: ws-twinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes ws-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ws-pop {
+  animation: ws-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Buttons — pill-shaped, soft ───────────────────────────── */
+.ws-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    opacity 0.2s ease;
+}
+
+.ws-btn:active {
+  transform: scale(0.97);
+}
+
+.ws-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+} /* Primary — muted terracotta, warm and calm */
+.ws-btn--primary {
+  background: var(--clay);
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(194, 107, 94, 0.28);
+}
+
+.ws-btn--primary:hover:not(:disabled) {
+  background: #b15a4e;
+  box-shadow: 0 12px 28px rgba(194, 107, 94, 0.34);
+  transform: translateY(-1px);
+}
+
+.ws-btn--night {
+  background: var(--night);
+  color: var(--star);
+}
+
+.ws-btn--night:hover:not(:disabled) {
+  background: var(--night-2);
+  box-shadow: 0 12px 28px rgba(30, 22, 14, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Gold — butter-gold, for night surfaces */
+.ws-btn--gold {
+  background: var(--gold);
+  color: #33291f;
+}
+
+.ws-btn--gold:hover:not(:disabled) {
+  background: #cd9728;
+  box-shadow: 0 12px 28px rgba(192, 138, 28, 0.35);
+  transform: translateY(-1px);
+}
+
+.ws-btn--ghost {
+  background: rgba(255, 253, 244, 0.6);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+}
+
+.ws-btn--ghost:hover:not(:disabled) {
+  background: var(--paper);
+  border-color: rgba(51, 41, 31, 0.22);
+  transform: translateY(-1px);
+}
+
+.ws-btn--soft {
+  background: var(--clay-soft);
+  color: var(--clay);
+}
+
+.ws-btn--soft:hover:not(:disabled) {
+  background: #fbdcc6;
+  transform: translateY(-1px);
+}
+
+.ws-btn--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ws-btn--danger:hover:not(:disabled) {
+  background: #f4cdbd;
+}
+
+.ws-btn--sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.ws-btn--lg {
+  padding: 15px 30px;
+  font-size: 15px;
+}
+
+.ws-btn--block {
+  width: 100%;
+}
+
+/* ── Cards — subtle borders, no harsh shadows.
+   Clear white glass with a whisper of tint per tone — calm and
+   airy, never a wall of colour. Colour lives in icons and accents. */
+.ws-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid rgba(27, 27, 31, 0.07);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(27, 27, 31, 0.04),
+    0 10px 28px rgba(27, 27, 31, 0.05);
+}
+
+.ws-card--sand {
+  background: rgba(245, 246, 238, 0.8);
+  border-color: rgba(27, 27, 31, 0.06);
+}
+
+.ws-card--night {
+  background: linear-gradient(150deg, var(--night), var(--night-2));
+  border-color: rgba(255, 233, 168, 0.16);
+  color: var(--star);
+}
+
+/* Pastel card tones — a barely-there wash, kept understated so the
+   room stays calm. Each tone is white glass with a faint coloured
+   border; the colour does the talking in icons and pills instead. */
+.ws-card--butter {
+  background: rgba(255, 252, 240, 0.85);
+  border-color: rgba(196, 172, 60, 0.28);
+}
+
+.ws-card--sage {
+  background: rgba(247, 249, 240, 0.85);
+  border-color: rgba(107, 122, 58, 0.22);
+}
+
+.ws-card--sky {
+  background: rgba(244, 249, 254, 0.85);
+  border-color: rgba(120, 160, 220, 0.28);
+}
+
+.ws-card--pink {
+  background: rgba(253, 244, 249, 0.85);
+  border-color: rgba(214, 130, 178, 0.28);
+}
+
+.ws-card--lavender {
+  background: rgba(248, 246, 252, 0.85);
+  border-color: rgba(150, 170, 210, 0.24);
+}
+
+/* ── Chips & pills ─────────────────────────────────────────── */
+.ws-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  background: rgba(255, 253, 244, 0.7);
+  border: 1.5px solid var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ws-chip:hover {
+  border-color: rgba(51, 41, 31, 0.24);
+  transform: translateY(-1px);
+}
+
+.ws-chip--on {
+  background: var(--clay-soft);
+  border-color: var(--clay);
+  color: var(--clay);
+  font-weight: 600;
+}
+
+.ws-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--sage-soft);
+  color: var(--sage);
+  border: 1px solid rgba(107, 122, 58, 0.28);
+}
+
+.ws-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--clay);
+}
+
+/* ── Inputs ────────────────────────────────────────────────── */
+.ws-input,
+.ws-textarea {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line);
+  background: rgba(255, 253, 244, 0.85);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ws-input:focus,
+.ws-textarea:focus {
+  outline: none;
+  border-color: var(--clay);
+  box-shadow: 0 0 0 4px rgba(242, 98, 0, 0.12);
+}
+
+.ws-input::placeholder,
+.ws-textarea::placeholder {
+  color: var(--faint);
+}
+
+.ws-textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+
+/* ── Dashed image placeholder — imagery that comes later ──── */
+.ws-placeholder {
+  border: 1.5px dashed rgba(51, 41, 31, 0.18);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--faint);
+  text-align: center;
+  background: rgba(255, 253, 244, 0.4);
+  min-height: 120px;
+}
+
+.ws-placeholder--photo {
+  min-height: 220px;
+  border-radius: var(--radius-lg);
+}
+
+/* ── Decorative curvy line — the thin pink loop from the refs ─ */
+.ws-squiggle {
+  position: absolute;
+  pointer-events: none;
+  color: #f3a5bc;
+  opacity: 0.55;
+}
+
+/* Clear glass floating dock — light, translucent, airy */
+.ws-dock {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  border-radius: 26px;
+  box-shadow: 0 12px 40px rgba(44, 35, 48, 0.12);
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.ws-dock__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  color: rgba(27, 27, 31, 0.5);
+  font-size: 9.5px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 14px;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease;
+}
+
+.ws-dock__btn--on {
+  color: var(--ink);
+  background: rgba(27, 27, 31, 0.06);
+}
+
+.ws-dock__plus {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(150deg, #d9a0b4, #c07a94);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(192, 122, 148, 0.35);
+  margin-top: -18px;
+  transition: transform 0.16s ease;
+}
+
+.ws-dock__plus:hover {
+  transform: scale(1.06);
+}
+
+/* ── Avatar — anonymous gradient disc ──────────────────────── */
+.ws-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--night);
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(51, 41, 31, 0.04);
+}
+
+/* ── Empty state ───────────────────────────────────────────── */
+.ws-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 44px 24px;
+}
+
+.ws-empty__art {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  background: var(--sand);
+  color: var(--muted);
+}
+
+.ws-empty__title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 20px;
+}
+
+.ws-empty__desc {
+  font-size: 13.5px;
+  color: var(--muted);
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+/* ── Toggle switch ─────────────────────────────────────────── */
+.ws-toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: rgba(51, 41, 31, 0.16);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.ws-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 3px rgba(51, 41, 31, 0.25);
+}
+
+.ws-toggle--on {
+  background: var(--sage);
+}
+
+.ws-toggle--on::after {
+  transform: translateX(20px);
+}
+
+/* ── Habit check circle — draws the check in ───────────────── */
+.ws-check {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.ws-check:hover {
+  border-color: var(--sage);
+  transform: scale(1.08);
+}
+
+.ws-check--on {
+  border-color: var(--sage);
+  background: var(--sage);
+}
+
+.ws-check__tick {
+  stroke: transparent;
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  transition:
+    stroke-dashoffset 0.28s ease 0.02s,
+    stroke 0.1s ease;
+}
+
+.ws-check--on .ws-check__tick {
+  stroke: #fff;
+  stroke-dashoffset: 0;
+}
+
+/* ── Progress ring ─────────────────────────────────────────── */
+.ws-ring {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ws-ring__track {
+  stroke: rgba(51, 41, 31, 0.08);
+}
+
+.ws-ring__value {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Star-field (fortune / CTA backgrounds) ────────────────── */
+.ws-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ws-stars span {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--star);
+  animation: ws-twinkle 3s ease-in-out infinite;
+}
+
+/* ── Modal ─────────────────────────────────────────────────── */
+.ws-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 22, 14, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ws-fade 0.2s ease both;
+}
+
+@keyframes ws-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ws-modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-line);
+  box-shadow: var(--shadow-lift);
+  padding: 28px;
+  animation: ws-rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Toast ─────────────────────────────────────────────────── */
+.ws-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--night);
+  color: var(--star);
+  border: 1px solid rgba(255, 233, 168, 0.2);
+  border-radius: var(--radius-pill);
+  padding: 12px 22px;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: var(--shadow-night);
+  z-index: 200;
+  animation: ws-toast-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes ws-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ── Responsive app shell — phone-only elements ───────────── */
+.ws-phone-only {
+  display: none;
+}
+
+.ws-desk-only {
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  .ws-phone-only {
+    display: flex !important;
+  }
+  .ws-desk-only {
+    display: none !important;
+  }
+}
+
+/* ── Dark mode ────────────────────────────────────────────────
+   One `data-theme="dark"` switch on <html> flips every surface.
+   Brand hues stay; neutrals, page ground, glass and card tones
+   swap to deep plum-grey. */
+[data-theme="dark"] {
+  --off-white: #17161d;
+  --buttercream: #2a2733;
+  --butter-soft: rgba(255, 248, 189, 0.14);
+  --orange-soft: rgba(242, 98, 0, 0.16);
+  --olive-soft: rgba(107, 122, 58, 0.2);
+  --cream: #191820;
+  --paper: #241f2d;
+  --sand: #2a2536;
+  --ink: #f2edf8;
+  --muted: #d1c9df;
+  --faint: #a59db0;
+  --line: rgba(236, 233, 240, 0.2);
+  --card-line: rgba(236, 233, 240, 0.14);
+  --gold-soft: rgba(192, 138, 28, 0.26);
+  --clay-soft: rgba(194, 107, 94, 0.26);
+  --sage-soft: rgba(107, 122, 58, 0.24);
+  --sky-soft: rgba(110, 151, 201, 0.22);
+  --lavender-soft: rgba(155, 143, 189, 0.24);
+  --rose-soft: rgba(206, 122, 99, 0.22);
+  --night: #0f0e14;
+  --night-2: #1a1822;
+  --night-3: #26222f;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 2px 8px rgba(0, 0, 0, 0.35), 0 24px 56px rgba(0, 0, 0, 0.5);
+  --page-bg: radial-gradient(
+    120% 100% at 50% 0%,
+    #1c1b23 0%,
+    #17161d 46%,
+    #121117 100%
+  );
+  --glass: rgba(48, 43, 58, 0.78);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .ws-card {
+  background: rgba(42, 38, 51, 0.82);
+  border-color: rgba(236, 233, 240, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] .ws-card--sand {
+  background: rgba(255, 255, 255, 0.018);
+  border-color: rgba(191, 183, 204, 0.075);
+}
+
+[data-theme="dark"] .ws-card--butter {
+  background: rgba(192, 138, 28, 0.08);
+  border-color: rgba(192, 138, 28, 0.2);
+}
+
+[data-theme="dark"] .ws-card--sage {
+  background: rgba(107, 122, 58, 0.09);
+  border-color: rgba(107, 122, 58, 0.18);
+}
+
+[data-theme="dark"] .ws-card--sky {
+  background: rgba(110, 151, 201, 0.08);
+  border-color: rgba(110, 151, 201, 0.2);
+}
+
+[data-theme="dark"] .ws-card--pink {
+  background: rgba(194, 107, 94, 0.08);
+  border-color: rgba(194, 107, 94, 0.2);
+}
+
+[data-theme="dark"] .ws-card--lavender {
+  background: rgba(155, 143, 189, 0.08);
+  border-color: rgba(155, 143, 189, 0.2);
+}
+
+[data-theme="dark"] .ws-dock {
+  background: rgba(28, 26, 35, 0.8);
+  border-color: rgba(236, 233, 240, 0.12);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38);
+}
+
+[data-theme="dark"] .ws-dock__btn {
+  color: rgba(236, 233, 240, 0.5);
+}
+
+[data-theme="dark"] .ws-dock__btn--on {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .ws-input,
+[data-theme="dark"] .ws-textarea {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .ws-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(218, 212, 228, 0.1);
+  color: var(--muted);
+}
+
+[data-theme="dark"] .ws-pill {
+  background: rgba(107, 122, 58, 0.18);
+  border-color: rgba(107, 122, 58, 0.32);
+}
+
+[data-theme="dark"] .ws-btn--ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .ws-modal {
+  background: var(--paper);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .ws-empty__art {
+  background: var(--sand);
+  color: var(--muted);
+}
+
+[data-theme="dark"] .ws-placeholder {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--faint);
+}
+
+[data-theme="dark"] .ws-avatar {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+[data-theme="dark"] .ws-toggle {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme="dark"] .ws-squiggle {
+  opacity: 0.35;
+}
+
+[data-theme="dark"] .ws-aura--gold {
+  background: radial-gradient(
+    circle,
+    rgba(242, 98, 0, 0.14) 0%,
+    rgba(242, 98, 0, 0) 70%
+  );
+}
+
+[data-theme="dark"] .ws-aura--sage {
+  background: radial-gradient(
+    circle,
+    rgba(107, 122, 58, 0.16) 0%,
+    rgba(107, 122, 58, 0) 70%
+  );
+}
+
+[data-theme="dark"] .ws-aura--lavender {
+  background: radial-gradient(
+    circle,
+    rgba(150, 190, 240, 0.16) 0%,
+    rgba(150, 190, 240, 0) 70%
+  );
+}
+
+[data-theme="dark"] .ws-aura--rose {
+  background: radial-gradient(
+    circle,
+    rgba(206, 122, 99, 0.14) 0%,
+    rgba(206, 122, 99, 0) 70%
+  );
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
