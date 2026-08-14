@@ -78,26 +78,45 @@ export function getUser() {
 }
 
 // Sign in with Google → mapped to an anonymous profile.
-// Falls back to a fully anonymous local session in preview mode.
+// Falls back to a fully anonymous local session ONLY in local previews
+// (file:// or the inlined preview page) where Firebase auth can't run at
+// all. On any real origin, failures surface as { mode: "error" } so the UI
+// can explain them instead of silently pretending the sign-in worked.
 export async function startWithGoogle() {
+  let res;
   try {
-    const res = await signInWithPopup(auth, provider);
-    const uid = res.user.uid; // used only as a key — identity never stored
-    let data = await remoteDoc(uid);
-    if (!data) {
-      data = emptySession({ uid, anonName: anonName(), authMethod: "google" });
-      await setDoc(doc(db, "users", uid), data).catch(() => {});
+    res = await signInWithPopup(auth, provider);
+  } catch (e) {
+    const code = e?.code || "";
+    // User closed the popup / cancelled — not a failure.
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+      return { mode: "cancelled" };
     }
-    persist(data);
-    return { mode: "firebase", user: data };
-  } catch {
-    const data = emptySession({
-      anonName: anonName(),
-      authMethod: "google-preview",
-    });
-    persist(data);
-    return { mode: "local", user: data };
+    // Local static preview — Firebase auth can't run there, so fall back
+    // to a temporary anonymous session.
+    if (
+      typeof location !== "undefined" &&
+      (location.protocol === "file:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1")
+    ) {
+      const data = emptySession({
+        anonName: anonName(),
+        authMethod: "google-preview",
+      });
+      persist(data);
+      return { mode: "local", user: data };
+    }
+    return { mode: "error", error: { code, message: e?.message || "Google sign-in failed." } };
   }
+  const uid = res.user.uid; // used only as a key — identity never stored
+  let data = await remoteDoc(uid);
+  if (!data) {
+    data = emptySession({ uid, anonName: anonName(), authMethod: "google" });
+    await setDoc(doc(db, "users", uid), data).catch(() => {});
+  }
+  persist(data);
+  return { mode: "firebase", user: data };
 }
 
 // Stay anonymous — generate a recovery code and a fresh empty space.

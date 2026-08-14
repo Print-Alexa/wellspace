@@ -16,6 +16,25 @@ const GoogleMark = ({ size = 20 }) => (
   </svg>
 );
 
+function googleErrorText(err) {
+  const code = err?.code || "";
+  if (code === "auth/unauthorized-domain") {
+    const host =
+      typeof location !== "undefined" ? location.hostname : "this website";
+    return `Google sign-in isn't enabled for ${host} yet. Add that domain to Firebase → Authentication → Settings → Authorized domains, then try again.`;
+  }
+  if (code === "auth/popup-blocked") {
+    return "Your browser blocked the sign-in popup. Allow popups for this site, then try again.";
+  }
+  if (code === "auth/network-request-failed") {
+    return "Couldn't reach Google. Check your connection and try again.";
+  }
+  if (code === "auth/too-many-requests") {
+    return "Too many sign-in attempts — wait a minute and try again.";
+  }
+  return err?.message || "Google sign-in didn't work. Please try again.";
+}
+
 export default function AuthScreen({ onAuth, onBack }) {
   const [view, setView] = useState("choose"); // choose | code
   const [sub, setSub] = useState("enter"); // enter | new | saved
@@ -31,11 +50,16 @@ export default function AuthScreen({ onAuth, onBack }) {
     setBusy(true);
     setError("");
     const res = await db.startWithGoogle();
+    setBusy(false);
+    if (res.mode === "cancelled") return; // user closed the popup — do nothing
+    if (res.mode === "error") {
+      setError(googleErrorText(res.error));
+      return;
+    }
     if (res.mode === "local") {
       setPreviewMode(true);
       toast("Preview mode — signed in with a temporary anonymous space", Moon);
     }
-    setBusy(false);
     onAuth();
   };
 
@@ -166,6 +190,27 @@ export default function AuthScreen({ onAuth, onBack }) {
               No name, no email, no profile picture. Two ways in — both keep
               your space anonymous.
             </p>
+
+            {error && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  background: C.dangerSoft,
+                  border: `1px solid ${C.danger}55`,
+                  color: C.danger,
+                  borderRadius: 12,
+                  padding: "11px 14px",
+                  fontSize: 12.5,
+                  lineHeight: 1.55,
+                  marginBottom: 20,
+                }}
+              >
+                <AlertTriangle size={14} strokeWidth={1.8} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>{error}</span>
+              </div>
+            )}
 
             {previewMode && (
               <div
