@@ -90,7 +90,7 @@ export default function Dashboard({ screen, onNavigate, onSignOut }) {
           gap: 18,
           maxWidth: 1320,
           margin: "0 auto",
-          padding: "14px 20px",
+          padding: "clamp(12px, 3vw, 20px)",
           position: "relative",
           zIndex: 1,
         }}

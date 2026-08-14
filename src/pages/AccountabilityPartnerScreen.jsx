@@ -58,14 +58,20 @@ export default function AccountabilityPartnerScreen({ user }) {
     : 0;
   const pairStreak = Math.max(0, ...(goals || []).map((g) => g.streak || 0));
 
-  const search = () => {
+  const search = async () => {
     setPhase("searching");
-    const t = setTimeout(() => {
-      // Matching needs the live backend — a real partner appears here when
-      // two students are paired. For now, the search ends quietly.
+    try {
+      const foundPartner = await db.findPartner();
+      if (foundPartner) {
+        db.setPartner(foundPartner);
+        setPhase("idle");
+        window.location.reload(); // Refresh to show the new partner
+      } else {
+        setPhase("no-match");
+      }
+    } catch {
       setPhase("no-match");
-      clearTimeout(t);
-    }, 2600);
+    }
   };
 
   // ── No partner yet ──

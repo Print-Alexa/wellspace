@@ -15,7 +15,18 @@
 
 import { auth, provider, db } from "../firebase";
 import { signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  limit,
+  orderBy,
+} from "firebase/firestore";
 import {
   emptySession,
   loadSession,
@@ -37,7 +48,9 @@ function persist(user) {
 
 function syncRemote(user) {
   if (auth?.currentUser?.uid) {
-    setDoc(doc(db, "users", auth.currentUser.uid), user, { merge: true }).catch(() => {});
+    setDoc(doc(db, "users", auth.currentUser.uid), user, { merge: true }).catch(
+      () => {},
+    );
   }
 }
 
@@ -71,7 +84,10 @@ export async function startWithGoogle() {
     persist(data);
     return { mode: "firebase", user: data };
   } catch {
-    const data = emptySession({ anonName: anonName(), authMethod: "google-preview" });
+    const data = emptySession({
+      anonName: anonName(),
+      authMethod: "google-preview",
+    });
     persist(data);
     return { mode: "local", user: data };
   }
@@ -85,7 +101,10 @@ export function startAnonymous() {
   persist(data);
   if (auth?.currentUser) {
     // Only for Google-authed users who switch to code mode in the same run.
-    setDoc(doc(db, "recoveryCodes", code), { uid: data.uid, createdAt: new Date().toISOString() }).catch(() => {});
+    setDoc(doc(db, "recoveryCodes", code), {
+      uid: data.uid,
+      createdAt: new Date().toISOString(),
+    }).catch(() => {});
   }
   return { code, user: data };
 }
@@ -106,7 +125,10 @@ export async function redeemCode(rawCode) {
   }
   const local = findCode(code);
   if (local) {
-    const data = cached && cached.uid === local.uid ? cached : emptySession({ uid: local.uid });
+    const data =
+      cached && cached.uid === local.uid
+        ? cached
+        : emptySession({ uid: local.uid });
     persist(data);
     return { mode: "local", user: data };
   }
@@ -174,20 +196,112 @@ export function setIntention(id) {
 }
 
 export function addPost(text) {
-  return mutate((u) => {
-    u.posts = [
-      {
-        id: `post_${Date.now()}`,
-        name: u.anonName,
-        text,
-        time: "just now",
-        reactions: [],
-        replies: [],
-        mine: true,
-      },
-      ...u.posts,
-    ];
+  const postData = {
+    id: `post_${Date.now()}`,
+    name: cached?.anonName || "Anonymous",
+    text,
+    time: "just now",
+    reactions: [],
+    replies: [],
+    mine: true,
+    userId: cached?.uid,
+    createdAt: new Date().toISOString(),
+  };
+
+  // Save to local session
+  mutate((u) => {
+    u.posts = [postData, ...u.posts];
   });
+
+  // Save to Firestore so other users can see it
+  if (auth?.currentUser?.uid) {
+    addDoc(collection(db, "posts"), {
+      name: cached?.anonName || "Anonymous",
+      text,
+      userId: cached?.uid,
+      createdAt: new Date().toISOString(),
+      reactions: [],
+      replies: [],
+    }).catch(() => {});
+  }
+
+  return postData;
+}
+
+// Fetch community posts from Firestore
+export async function getCommunityPosts() {
+  try {
+    if (!auth?.currentUser?.uid) return [];
+    const q = query(
+      collection(db, "posts"),
+      orderBy("createdAt", "desc"),
+      limit(50),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      mine: false,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function findPartner() {
+  try {
+    if (!auth?.currentUser?.uid || !cached) return null;
+
+    // Query for users with similar habits
+    const q = query(
+      collection(db, "users"),
+      where("buildHabits", "!=", []),
+      where("partner", "==", null),
+      limit(1),
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) return null;
+
+    const potentialPartner = snap.docs[0];
+    const partnerData = potentialPartner.data();
+
+    // Create partnership
+    const partner = {
+      id: potentialPartner.id,
+      name: partnerData.anonName,
+      pairedAt: new Date().toISOString(),
+      goals: (cached.buildHabits || []).map((h) => ({
+        id: h,
+        streak: 0,
+        me: false,
+        them: false,
+      })),
+      messages: [],
+    };
+
+    // Update both users
+    setDoc(
+      doc(db, "users", auth.currentUser.uid),
+      { partner },
+      { merge: true },
+    ).catch(() => {});
+    setDoc(
+      doc(db, "users", potentialPartner.id),
+      {
+        partner: {
+          ...partner,
+          id: auth.currentUser.uid,
+          name: cached.anonName,
+        },
+      },
+      { merge: true },
+    ).catch(() => {});
+
+    return partner;
+  } catch {
+    return null;
+  }
 }
 
 export function saveCard(id) {

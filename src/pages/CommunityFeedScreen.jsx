@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send, MessageCircle, Heart, Sparkles } from "lucide-react";
 import { C, serif, sans, reactionById } from "../constants";
 import {
@@ -14,12 +14,32 @@ import * as db from "../lib/db";
 
 export default function CommunityFeedScreen({ user }) {
   const [ownPosts, setOwnPosts] = useState(user?.posts || []);
+  const [communityPosts, setCommunityPosts] = useState([]);
   const [draft, setDraft] = useState("");
   const [openReplies, setOpenReplies] = useState({});
   const [replyDrafts, setReplyDrafts] = useState({});
   const [reactionState, setReactionState] = useState({}); // { postId: { iconId: bool } }
+  const [loading, setLoading] = useState(false);
 
-  const allPosts = ownPosts;
+  // Fetch community posts when component mounts or every 10 seconds
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      const posts = await db.getCommunityPosts();
+      setCommunityPosts(posts);
+      setLoading(false);
+    };
+
+    fetchPosts();
+    const interval = setInterval(fetchPosts, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Combine own posts with community posts, with own posts first
+  const allPosts = [
+    ...ownPosts,
+    ...communityPosts.filter((p) => !ownPosts.some((op) => op.id === p.id)),
+  ];
 
   const compose = () => {
     const text = draft.trim();
