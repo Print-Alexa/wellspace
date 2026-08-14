@@ -47,8 +47,17 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }, [stage, screen]);
 
-  const afterLoading = () =>
-    setStage(db.getUser()?.onboarded ? "app" : "landing");
+  const afterLoading = async () => {
+    // If the Google redirect flow just bounced back to the app, complete
+    // the sign-in before deciding where to go.
+    const res = await db.finishGoogleRedirect();
+    const user = db.getUser();
+    if (res?.mode === "firebase" || res?.mode === "local") {
+      setStage(user?.onboarded ? "app" : "onboarding");
+      return;
+    }
+    setStage(user?.onboarded ? "app" : "landing");
+  };
   const handleAuth = () =>
     setStage(db.getUser()?.onboarded ? "app" : "onboarding");
   const handleSignOut = async () => {

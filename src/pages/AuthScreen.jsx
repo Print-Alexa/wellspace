@@ -50,6 +50,11 @@ export default function AuthScreen({ onAuth, onBack }) {
     setBusy(true);
     setError("");
     const res = await db.startWithGoogle();
+    if (res.mode === "redirecting") {
+      // The page is navigating to Google — the app completes the sign-in
+      // when it returns. Keep the button in its "opening…" state.
+      return;
+    }
     setBusy(false);
     if (res.mode === "cancelled") return; // user closed the popup — do nothing
     if (res.mode === "error") {
@@ -283,7 +288,7 @@ export default function AuthScreen({ onAuth, onBack }) {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14.5, fontWeight: 600, color: C.ink, marginBottom: 2 }}>
-                  {busy ? "Opening Google…" : "Continue with Google"}
+                  {busy ? "Taking you to Google…" : "Continue with Google"}
                 </p>
                 <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
                   Just a recovery key — your Google info is never stored or shown.

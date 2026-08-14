@@ -14,7 +14,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { auth, provider, db } from "../firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import {
   doc,
   getDoc,
@@ -77,46 +77,85 @@ export function getUser() {
   return cached || null;
 }
 
-// Sign in with Google → mapped to an anonymous profile.
-// Falls back to a fully anonymous local session ONLY in local previews
-// (file:// or the inlined preview page) where Firebase auth can't run at
-// all. On any real origin, failures surface as { mode: "error" } so the UI
-// can explain them instead of silently pretending the sign-in worked.
-export async function startWithGoogle() {
-  let res;
-  try {
-    res = await signInWithPopup(auth, provider);
-  } catch (e) {
-    const code = e?.code || "";
-    // User closed the popup / cancelled — not a failure.
-    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-      return { mode: "cancelled" };
-    }
-    // Local static preview — Firebase auth can't run there, so fall back
-    // to a temporary anonymous session.
-    if (
-      typeof location !== "undefined" &&
-      (location.protocol === "file:" ||
-        location.hostname === "localhost" ||
-        location.hostname === "127.0.0.1")
-    ) {
-      const data = emptySession({
-        anonName: anonName(),
-        authMethod: "google-preview",
-      });
-      persist(data);
-      return { mode: "local", user: data };
-    }
-    return { mode: "error", error: { code, message: e?.message || "Google sign-in failed." } };
-  }
-  const uid = res.user.uid; // used only as a key — identity never stored
+// Local static preview (file:// or an inlined preview page) — Firebase auth
+// can't run at all, so fall back to a temporary anonymous session.
+function isLocalPreview() {
+  if (typeof location === "undefined") return false;
+  if (location.protocol === "file:") return true;
+  const p = location.protocol;
+  return p !== "https:" && p !== "http:";
+}
+
+// Map a Firebase Auth user (popup or redirect) to an anonymous session.
+async function sessionFromAuthUser(uid) {
   let data = await remoteDoc(uid);
   if (!data) {
     data = emptySession({ uid, anonName: anonName(), authMethod: "google" });
     await setDoc(doc(db, "users", uid), data).catch(() => {});
   }
   persist(data);
-  return { mode: "firebase", user: data };
+  return data;
+}
+
+// Sign in with Google → mapped to an anonymous profile.
+//
+// Uses the REDIRECT flow first: it's the reliable path on mobile. A popup
+// can be killed by the browser mid-handshake (iOS Safari, strict cookie
+// settings) — the account chooser closes but the result never reaches the
+// app, leaving the user stuck on the sign-in screen. The redirect survives
+// that because the result is stashed before leaving the page and picked up
+// again on return. Falls back to a popup in embedded contexts where
+// redirects are unavailable.
+//
+// On any real origin, failures surface as { mode: "error" } so the UI can
+// explain them instead of silently pretending the sign-in worked. Only
+// local previews get the fully anonymous fallback session.
+export async function startWithGoogle() {
+  if (isLocalPreview()) {
+    const data = emptySession({
+      anonName: anonName(),
+      authMethod: "google-preview",
+    });
+    persist(data);
+    return { mode: "local", user: data };
+  }
+  try {
+    await signInWithRedirect(auth, provider);
+    return { mode: "redirecting" }; // page is navigating to Google; boot completes it
+  } catch {
+    // Redirect unavailable here (e.g. some embedded webviews) — try a popup.
+  }
+  try {
+    const res = await signInWithPopup(auth, provider);
+    const data = await sessionFromAuthUser(res.user.uid);
+    return { mode: "firebase", user: data };
+  } catch (e) {
+    const code = e?.code || "";
+    // User closed the popup / cancelled — not a failure.
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+      return { mode: "cancelled" };
+    }
+    return { mode: "error", error: { code, message: e?.message || "Google sign-in failed." } };
+  }
+}
+
+// Called at boot: if the Google redirect flow just returned to the app,
+// complete the sign-in and map it to a session. Returns null when there
+// was nothing pending.
+export async function finishGoogleRedirect() {
+  if (isLocalPreview()) return null;
+  try {
+    const res = await getRedirectResult(auth);
+    if (!res) return null; // nothing pending — normal boot
+    const data = await sessionFromAuthUser(res.user.uid);
+    return { mode: "firebase", user: data };
+  } catch (e) {
+    const code = e?.code || "";
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+      return { mode: "cancelled" };
+    }
+    return { mode: "error", error: { code, message: e?.message || "Google sign-in failed." } };
+  }
 }
 
 // Stay anonymous — generate a recovery code and a fresh empty space.
