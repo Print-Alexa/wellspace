@@ -36,6 +36,7 @@ import {
   generateRecoveryCode,
   storeCode,
   findCode,
+  listLocalCodes,
 } from "./session";
 import { anonName, todayKey } from "../constants";
 
@@ -86,11 +87,53 @@ function isLocalPreview() {
   return p !== "https:" && p !== "http:";
 }
 
+// Rough measure of how much real data a profile holds. Used to decide
+// which session should win when a Google sign-in meets an orphaned local
+// profile from a previously failed sign-in.
+function profileScore(data) {
+  if (!data) return 0;
+  return (
+    (data.onboarded ? 2 : 0) +
+    (data.buildHabits?.length || 0) +
+    Object.keys(data.moodLog || {}).length +
+    (data.posts?.length || 0) +
+    (data.partner ? 2 : 0)
+  );
+}
+
 // Map a Firebase Auth user (popup or redirect) to an anonymous session.
+//
+// Cross-device recovery: if this device holds an orphaned anonymous profile
+// (created when a Google sign-in silently failed before the redirect flow
+// existed — authMethod "google-preview", no link to any Google account) and
+// the Google uid has no profile or a thinner one, adopt the local session
+// under the Google uid so the data syncs to every device.
 async function sessionFromAuthUser(uid) {
-  let data = await remoteDoc(uid);
-  if (!data) {
-    data = emptySession({ uid, anonName: anonName(), authMethod: "google" });
+  const remote = await remoteDoc(uid);
+  const local = loadSession();
+  const orphan =
+    local && local.authMethod === "google-preview" && local.uid !== uid
+      ? local
+      : null;
+
+  let data = remote;
+  let shouldWrite = false;
+
+  if (!remote) {
+    // First Google sign-in for this account on any device.
+    data = orphan
+      ? { ...orphan, uid, authMethod: "google" } // recover the device's orphaned session
+      : emptySession({ uid, anonName: anonName(), authMethod: "google" });
+    shouldWrite = true;
+  } else if (orphan && profileScore(orphan) > profileScore(remote)) {
+    // The Google profile exists, but this device has a local orphan with
+    // more real data — let the fuller session win so the user's data
+    // follows them across devices.
+    data = { ...orphan, uid, authMethod: "google" };
+    shouldWrite = true;
+  }
+
+  if (shouldWrite) {
     await setDoc(doc(db, "users", uid), data).catch(() => {});
   }
   persist(data);
@@ -164,13 +207,12 @@ export function startAnonymous() {
   const data = emptySession({ anonName: anonName(), recoveryCode: code });
   storeCode(code, data.uid);
   persist(data);
-  if (auth?.currentUser) {
-    // Only for Google-authed users who switch to code mode in the same run.
-    setDoc(doc(db, "recoveryCodes", code), {
-      uid: data.uid,
-      createdAt: new Date().toISOString(),
-    }).catch(() => {});
-  }
+  // Store the code → uid mapping in Firestore so the code works on ANY
+  // device — a recovery code is the only way back into an anonymous space.
+  setDoc(doc(db, "recoveryCodes", code), {
+    uid: data.uid,
+    createdAt: new Date().toISOString(),
+  }).catch(() => {});
   return { code, user: data };
 }
 
@@ -198,6 +240,25 @@ export async function redeemCode(rawCode) {
     return { mode: "local", user: data };
   }
   return null;
+}
+
+// Push any device-local recovery codes up to Firestore so they also work
+// on other devices (older sessions stored codes locally only).
+export async function backfillLocalCodes() {
+  const codes = listLocalCodes();
+  for (const { code, uid, createdAt } of codes) {
+    try {
+      const snap = await getDoc(doc(db, "recoveryCodes", code));
+      if (!snap.exists()) {
+        await setDoc(doc(db, "recoveryCodes", code), {
+          uid,
+          createdAt: createdAt || new Date().toISOString(),
+        });
+      }
+    } catch {
+      // Firestore unreachable — the device copy still works.
+    }
+  }
 }
 
 // Merge a patch into the session (onboarding answers, prefs, …).

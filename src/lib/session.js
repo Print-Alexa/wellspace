@@ -107,3 +107,16 @@ export function findCode(code) {
     return null;
   }
 }
+
+export function listLocalCodes() {
+  try {
+    const map = JSON.parse(localStorage.getItem(CODES_KEY) || "{}");
+    return Object.entries(map).map(([code, info]) => ({
+      code,
+      uid: info?.uid,
+      createdAt: info?.createdAt,
+    }));
+  } catch {
+    return [];
+  }
+}

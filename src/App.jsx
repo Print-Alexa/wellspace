@@ -51,6 +51,9 @@ export default function App() {
     // If the Google redirect flow just bounced back to the app, complete
     // the sign-in before deciding where to go.
     const res = await db.finishGoogleRedirect();
+    // Push any device-local recovery codes up to Firestore so they also
+    // work on other devices.
+    db.backfillLocalCodes();
     const user = db.getUser();
     if (res?.mode === "firebase" || res?.mode === "local") {
       setStage(user?.onboarded ? "app" : "onboarding");
