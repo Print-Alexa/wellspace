@@ -231,7 +231,8 @@ export function addPost(text) {
 // Fetch community posts from Firestore
 export async function getCommunityPosts() {
   try {
-    if (!auth?.currentUser?.uid) return [];
+    // Allow both Firebase and recovery code users to see posts
+    if (!cached?.uid) return [];
     const q = query(
       collection(db, "posts"),
       orderBy("createdAt", "desc"),
@@ -241,7 +242,7 @@ export async function getCommunityPosts() {
     return snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      mine: false,
+      mine: doc.data().userId === cached.uid,
     }));
   } catch {
     return [];
@@ -250,9 +251,9 @@ export async function getCommunityPosts() {
 
 export async function findPartner() {
   try {
-    if (!auth?.currentUser?.uid || !cached) return null;
+    if (!cached?.uid) return null;
 
-    // Query for users with similar habits
+    // Query for users with similar habits who don't have partners yet
     const q = query(
       collection(db, "users"),
       where("buildHabits", "!=", []),
@@ -265,6 +266,9 @@ export async function findPartner() {
 
     const potentialPartner = snap.docs[0];
     const partnerData = potentialPartner.data();
+
+    // Avoid pairing someone with themselves
+    if (potentialPartner.id === cached.uid) return null;
 
     // Create partnership
     const partner = {
@@ -280,23 +284,25 @@ export async function findPartner() {
       messages: [],
     };
 
-    // Update both users
-    setDoc(
-      doc(db, "users", auth.currentUser.uid),
-      { partner },
-      { merge: true },
-    ).catch(() => {});
-    setDoc(
-      doc(db, "users", potentialPartner.id),
-      {
-        partner: {
-          ...partner,
-          id: auth.currentUser.uid,
-          name: cached.anonName,
+    // Update both users in Firebase (only if authenticated)
+    if (auth?.currentUser?.uid) {
+      setDoc(
+        doc(db, "users", auth.currentUser.uid),
+        { partner },
+        { merge: true },
+      ).catch(() => {});
+      setDoc(
+        doc(db, "users", potentialPartner.id),
+        {
+          partner: {
+            ...partner,
+            id: auth.currentUser.uid,
+            name: cached.anonName,
+          },
         },
-      },
-      { merge: true },
-    ).catch(() => {});
+        { merge: true },
+      ).catch(() => {});
+    }
 
     return partner;
   } catch {
