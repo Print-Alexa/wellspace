@@ -1,0 +1,8 @@
+/__/auth/handler
+  Content-Type: text/html
+/__/auth/iframe
+  Content-Type: text/html
+/__/auth/links
+  Content-Type: text/html
+/__/firebase/init.json
+  Content-Type: application/json

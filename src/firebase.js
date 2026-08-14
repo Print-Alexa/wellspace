@@ -4,7 +4,13 @@ import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC7IK2ZYAOpcHyhXms-PKHEdaSHdxUHxcA",
-  authDomain: "wellspace-d81e5.firebaseapp.com",
+  // Same-origin auth domain: the Firebase sign-in helpers are vendored in
+  // public/__/auth and served from this app's own domain. A cross-origin
+  // authDomain (the default *.firebaseapp.com) is silently broken on every
+  // modern browser because storage partitioning blocks the auth iframe —
+  // the sign-in result never reaches the app and it bounces back to the
+  // landing page. Same-origin auth avoids that entirely.
+  authDomain: "wellspacebya.netlify.app",
   projectId: "wellspace-d81e5",
   storageBucket: "wellspace-d81e5.firebasestorage.app",
   messagingSenderId: "645173865167",
