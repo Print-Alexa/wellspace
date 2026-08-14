@@ -10,6 +10,7 @@ import { applyTheme } from "./lib/darkmode";
 export default function App() {
   const [stage, setStage] = useState("loading");
   const [screen, setScreen] = useState("dashboard");
+  const [authError, setAuthError] = useState(null);
   const skipPushRef = useRef(false); // prevent pushState feedback loop
 
   // Apply the user's saved theme (session prefs) on mount.
@@ -59,6 +60,14 @@ export default function App() {
       setStage(user?.onboarded ? "app" : "onboarding");
       return;
     }
+    if (res?.mode === "error") {
+      // The redirect came back but sign-in failed — show the reason instead
+      // of silently bouncing to the landing page, which just looks like the
+      // click did nothing and invites retrying the same failing flow.
+      setAuthError(res.error);
+      setStage("auth");
+      return;
+    }
     setStage(user?.onboarded ? "app" : "landing");
   };
   const handleAuth = () =>
@@ -72,10 +81,21 @@ export default function App() {
 
   if (stage === "loading") return <LoadingScreen onComplete={afterLoading} />;
   if (stage === "landing")
-    return <LandingPage onGetStarted={() => setStage("auth")} />;
+    return (
+      <LandingPage
+        onGetStarted={() => {
+          setAuthError(null);
+          setStage("auth");
+        }}
+      />
+    );
   if (stage === "auth")
     return (
-      <AuthScreen onAuth={handleAuth} onBack={() => setStage("landing")} />
+      <AuthScreen
+        onAuth={handleAuth}
+        onBack={() => setStage("landing")}
+        initialError={authError}
+      />
     );
   if (stage === "onboarding")
     return <OnboardingScreen onComplete={() => setStage("app")} />;

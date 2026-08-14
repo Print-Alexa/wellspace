@@ -35,14 +35,14 @@ function googleErrorText(err) {
   return err?.message || "Google sign-in didn't work. Please try again.";
 }
 
-export default function AuthScreen({ onAuth, onBack }) {
+export default function AuthScreen({ onAuth, onBack, initialError = null }) {
   const [view, setView] = useState("choose"); // choose | code
   const [sub, setSub] = useState("enter"); // enter | new | saved
   const [code, setCode] = useState("");
   const [newCode, setNewCode] = useState(null);
   const [showCode, setShowCode] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError ? googleErrorText(initialError) : "");
   const [copied, setCopied] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 

@@ -189,8 +189,18 @@ export async function finishGoogleRedirect() {
   if (isLocalPreview()) return null;
   try {
     const res = await getRedirectResult(auth);
-    if (!res) return null; // nothing pending — normal boot
-    const data = await sessionFromAuthUser(res.user.uid);
+    let user = res?.user || null;
+    if (!user) {
+      // Known Firebase JS SDK race: getRedirectResult() can resolve null
+      // even though the redirect DID complete and Firebase already
+      // restored the signed-in user. Wait for auth state to settle and
+      // check currentUser before concluding nothing is pending — without
+      // this, a successful sign-in silently bounces back to "landing".
+      await auth.authStateReady();
+      user = auth.currentUser;
+    }
+    if (!user) return null; // nothing pending — normal boot
+    const data = await sessionFromAuthUser(user.uid);
     return { mode: "firebase", user: data };
   } catch (e) {
     const code = e?.code || "";
