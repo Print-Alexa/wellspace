@@ -145,7 +145,7 @@ export default function LandingPage({ onGetStarted }) {
           <VennLogo size={32} />
           <span style={{ fontFamily: script, fontSize: 21, color: C.ink }}>WellSpace</span>
         </a>
-        <div style={{ display: "flex", alignItems: "center", gap: 26, fontSize: 13.5, color: C.muted, fontWeight: 500 }}>
+        <div className="ws-nav-links" style={{ display: "flex", alignItems: "center", gap: 26, fontSize: 13.5, color: C.muted, fontWeight: 500 }}>
           {[
             ["#features", "Features"],
             ["#how", "How it works"],
@@ -220,6 +220,7 @@ export default function LandingPage({ onGetStarted }) {
         <Aura tone="sage" size={480} top="34%" left="-200px" />
         <Aura tone="lavender" size={420} bottom="-100px" right="18%" />
         <div
+          className="ws-stack"
           style={{
             position: "relative",
             zIndex: 1,
@@ -445,7 +446,7 @@ export default function LandingPage({ onGetStarted }) {
               Six gentle tools, one safe place. Built for students, kept anonymous.
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div className="ws-stack" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
@@ -519,7 +520,7 @@ export default function LandingPage({ onGetStarted }) {
               Three gentle steps
             </h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 36 }}>
+          <div className="ws-stack" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 36 }}>
             {STEPS.map((s, i) => (
               <div key={s.n} style={{ textAlign: "center", position: "relative" }}>
                 <div
@@ -547,6 +548,7 @@ export default function LandingPage({ onGetStarted }) {
                 <p style={{ fontSize: 13.5, color: C.muted, lineHeight: 1.7 }}>{s.desc}</p>
                 {i < 2 && (
                   <div
+                    className="ws-step-arrow"
                     style={{
                       position: "absolute",
                       top: 24,
@@ -562,7 +564,7 @@ export default function LandingPage({ onGetStarted }) {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 56, display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 28, alignItems: "stretch" }}>
+          <div className="ws-stack" style={{ marginTop: 56, display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 28, alignItems: "stretch" }}>
             <div
               className="ws-photo-grain"
               style={{
@@ -608,6 +610,7 @@ export default function LandingPage({ onGetStarted }) {
         <Aura tone="sage" size={480} top="10%" right="-160px" />
         <div style={{ maxWidth: 1120, margin: "0 auto", position: "relative" }}>
           <div
+            className="ws-stack"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -682,7 +685,7 @@ export default function LandingPage({ onGetStarted }) {
           </div>
 
           {/* photo strip */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 18 }}>
+          <div className="ws-stack" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 18 }}>
             <div
               className="ws-photo-grain"
               style={{

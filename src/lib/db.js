@@ -26,6 +26,7 @@ import {
   getDocs,
   limit,
   orderBy,
+  runTransaction,
 } from "firebase/firestore";
 import {
   emptySession,
@@ -39,6 +40,7 @@ import {
 import { anonName, todayKey } from "../constants";
 
 let cached = loadSession();
+let syncWarned = false;
 
 function persist(user) {
   cached = user;
@@ -46,12 +48,17 @@ function persist(user) {
   syncRemote(user);
 }
 
+// Mirror the session to Firestore so community & partner features can
+// share it. Keyed by the session's own anonymous uid — no login required
+// (the anonymous design means every session already has one).
 function syncRemote(user) {
-  if (auth?.currentUser?.uid) {
-    setDoc(doc(db, "users", auth.currentUser.uid), user, { merge: true }).catch(
-      () => {},
-    );
-  }
+  if (!user?.uid) return;
+  setDoc(doc(db, "users", user.uid), user, { merge: true }).catch((e) => {
+    if (!syncWarned) {
+      syncWarned = true;
+      console.warn("WellSpace: Firestore sync unavailable — running local-only", e);
+    }
+  });
 }
 
 async function remoteDoc(uid) {
@@ -143,6 +150,13 @@ export function saveUser(patch) {
 }
 
 export async function resetAuth() {
+  const uid = cached?.uid;
+  if (uid) {
+    // Stop advertising as available for a partner.
+    setDoc(doc(db, "users", uid), { seekPartner: false }, { merge: true }).catch(
+      () => {},
+    );
+  }
   clearSession();
   cached = null;
   try {
@@ -195,9 +209,28 @@ export function setIntention(id) {
   return mutate((u) => (u.intention = id));
 }
 
-export function addPost(text) {
+export async function addPost(text) {
+  const createdAt = new Date().toISOString();
+  let id = `post_${Date.now()}`; // local-only fallback
+
+  // Save to Firestore first so everyone sees it. No login required — the
+  // post is anonymous by design, keyed by the session's own uid.
+  try {
+    const ref = await addDoc(collection(db, "posts"), {
+      name: cached?.anonName || "Anonymous",
+      text,
+      userId: cached?.uid,
+      createdAt,
+      reactions: [],
+      replies: [],
+    });
+    id = ref.id; // use the shared id so the feed can dedupe own posts
+  } catch (e) {
+    console.warn("WellSpace: post kept local-only (Firestore unreachable)", e);
+  }
+
   const postData = {
-    id: `post_${Date.now()}`,
+    id,
     name: cached?.anonName || "Anonymous",
     text,
     time: "just now",
@@ -205,7 +238,7 @@ export function addPost(text) {
     replies: [],
     mine: true,
     userId: cached?.uid,
-    createdAt: new Date().toISOString(),
+    createdAt,
   };
 
   // Save to local session
@@ -213,25 +246,25 @@ export function addPost(text) {
     u.posts = [postData, ...u.posts];
   });
 
-  // Save to Firestore so other users can see it
-  if (auth?.currentUser?.uid) {
-    addDoc(collection(db, "posts"), {
-      name: cached?.anonName || "Anonymous",
-      text,
-      userId: cached?.uid,
-      createdAt: new Date().toISOString(),
-      reactions: [],
-      replies: [],
-    }).catch(() => {});
-  }
-
   return postData;
+}
+
+function timeAgo(iso) {
+  if (!iso) return "";
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 // Fetch community posts from Firestore
 export async function getCommunityPosts() {
   try {
-    // Allow both Firebase and recovery code users to see posts
     if (!cached?.uid) return [];
     const q = query(
       collection(db, "posts"),
@@ -239,12 +272,16 @@ export async function getCommunityPosts() {
       limit(50),
     );
     const snap = await getDocs(q);
-    return snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      mine: doc.data().userId === cached.uid,
-    }));
-  } catch {
+    return snap.docs
+      .filter((d) => d.data().text)
+      .map((d) => ({
+        id: d.id,
+        ...d.data(),
+        time: timeAgo(d.data().createdAt),
+        mine: d.data().userId === cached.uid,
+      }));
+  } catch (e) {
+    console.warn("WellSpace: could not fetch community posts", e);
     return [];
   }
 }
@@ -253,61 +290,86 @@ export async function findPartner() {
   try {
     if (!cached?.uid) return null;
 
-    // Query for users with similar habits who don't have partners yet
+    // Broadcast that you're looking, so other searchers can find you.
+    setDoc(doc(db, "users", cached.uid), { seekPartner: true }, { merge: true }).catch(
+      () => {},
+    );
+
+    // Find others who are also listening. (Equality filter only — a query
+    // like `buildHabits != []` is invalid on array fields and always failed.)
     const q = query(
       collection(db, "users"),
-      where("buildHabits", "!=", []),
-      where("partner", "==", null),
-      limit(1),
+      where("seekPartner", "==", true),
+      limit(30),
     );
     const snap = await getDocs(q);
 
-    if (snap.empty) return null;
+    for (const candidateDoc of snap.docs) {
+      const data = candidateDoc.data();
+      if (candidateDoc.id === cached.uid) continue; // never match yourself
+      if (data.partner) continue; // already claimed by someone else
+      if (!Array.isArray(data.buildHabits) || data.buildHabits.length === 0)
+        continue; // need at least one shared habit
 
-    const potentialPartner = snap.docs[0];
-    const partnerData = potentialPartner.data();
+      const partner = {
+        id: candidateDoc.id,
+        name: data.anonName || "QuietCompanion",
+        pairedAt: new Date().toISOString(),
+        goals: (cached.buildHabits || []).map((h) => ({
+          id: h,
+          streak: 0,
+          me: false,
+          them: false,
+        })),
+        messages: [],
+      };
 
-    // Avoid pairing someone with themselves
-    if (potentialPartner.id === cached.uid) return null;
-
-    // Create partnership
-    const partner = {
-      id: potentialPartner.id,
-      name: partnerData.anonName,
-      pairedAt: new Date().toISOString(),
-      goals: (cached.buildHabits || []).map((h) => ({
-        id: h,
-        streak: 0,
-        me: false,
-        them: false,
-      })),
-      messages: [],
-    };
-
-    // Update both users in Firebase (only if authenticated)
-    if (auth?.currentUser?.uid) {
-      setDoc(
-        doc(db, "users", auth.currentUser.uid),
-        { partner },
-        { merge: true },
-      ).catch(() => {});
-      setDoc(
-        doc(db, "users", potentialPartner.id),
-        {
-          partner: {
+      try {
+        // Claim them atomically so two searchers never match the same person.
+        await runTransaction(db, async (tx) => {
+          const candRef = doc(db, "users", candidateDoc.id);
+          const candSnap = await tx.get(candRef);
+          if (!candSnap.exists() || candSnap.data().partner)
+            throw new Error("taken");
+          // Their view of the match points back at us.
+          const partnerForThem = {
             ...partner,
-            id: auth.currentUser.uid,
-            name: cached.anonName,
-          },
-        },
-        { merge: true },
-      ).catch(() => {});
+            id: cached.uid,
+            name: cached.anonName || "QuietCompanion",
+          };
+          tx.update(candRef, { partner: partnerForThem, seekPartner: false });
+          tx.update(doc(db, "users", cached.uid), {
+            partner,
+            seekPartner: false,
+          });
+        });
+        return partner; // claimed!
+      } catch {
+        // Someone else matched them first — try the next listener.
+      }
     }
 
-    return partner;
-  } catch {
+    return null; // nobody is listening right now
+  } catch (e) {
+    console.warn("WellSpace: partner search failed", e);
     return null;
   }
+}
+
+// Pull the latest shared state for this session (someone may have matched
+// you as a partner, or replied to your post, while you were away).
+export async function refreshUser() {
+  if (!cached?.uid) return cached;
+  try {
+    const snap = await getDoc(doc(db, "users", cached.uid));
+    if (snap.exists()) {
+      cached = { ...cached, ...snap.data() };
+      saveSession(cached);
+    }
+  } catch (e) {
+    console.warn("WellSpace: could not refresh space", e);
+  }
+  return cached;
 }
 
 export function saveCard(id) {

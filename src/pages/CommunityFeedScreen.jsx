@@ -41,10 +41,10 @@ export default function CommunityFeedScreen({ user }) {
     ...communityPosts.filter((p) => !ownPosts.some((op) => op.id === p.id)),
   ];
 
-  const compose = () => {
+  const compose = async () => {
     const text = draft.trim();
     if (!text) return;
-    const post = db.addPost(text);
+    const post = await db.addPost(text);
     setOwnPosts((p) => [post, ...p]);
     setDraft("");
     toast("Shared anonymously — no name attached", Heart);
@@ -156,6 +156,7 @@ export default function CommunityFeedScreen({ user }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
             gap: 12,
             marginTop: 12,
           }}

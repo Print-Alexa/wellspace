@@ -918,6 +918,71 @@ button:active,
   h3 {
     font-size: clamp(18px, 5vw, 28px);
   }
+
+  /* Touch: hover-only affordances need to be visible without a cursor */
+  .ws-habit-trash {
+    opacity: 0.55 !important;
+  }
+
+  /* Toasts sit above the floating bottom dock */
+  .ws-toast {
+    bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Small screens — stop multi-column layouts from squeezing ──
+   Most layouts are inline `gridTemplateColumns` styles that assume a
+   wide screen. Below 720px these utility classes reflow them so no
+   card, chart or option gets crushed into a narrow phone column. */
+@media (max-width: 720px) {
+  /* Multi-column grids → a single, full-width column */
+  .ws-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Mood pickers: keep several columns, but wide enough to tap */
+  .ws-moods-8 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  .ws-moods-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Habit stats: stay 3-up, but stack each tile's content */
+  .ws-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .ws-stats > .ws-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  /* Landing nav: wordmark + CTA only — links live in the page */
+  .ws-nav-links {
+    display: none !important;
+  }
+
+  /* Steps connectors only make sense side-by-side */
+  .ws-step-arrow {
+    display: none !important;
+  }
+
+  /* Auth: photo panel out, give the form the whole width */
+  .ws-auth-photo {
+    display: none !important;
+  }
+
+  .ws-auth-panel {
+    padding: 32px 20px !important;
+  }
+
+  /* Fortune: keep actions + footer clear of the bottom dock */
+  .ws-fortune {
+    min-height: calc(100svh - 140px) !important;
+  }
 }
 
 /* Extra small screens — optimize for phones under 480px */
@@ -946,6 +1011,15 @@ button:active,
 
   .ws-card {
     padding: clamp(16px, 4vw, 20px) !important;
+  }
+
+  /* Mood options: give the labels room to breathe in 4-up rows */
+  .ws-mood-option {
+    padding: 14px 2px !important;
+  }
+
+  .ws-mood-option span:last-child {
+    font-size: 10px;
   }
 }
 

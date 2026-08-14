@@ -122,6 +122,7 @@ export default function MoodLogScreen({ user, onNavigate }) {
           style={{
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: 8,
             marginBottom: 22,
           }}
@@ -152,6 +153,7 @@ export default function MoodLogScreen({ user, onNavigate }) {
         </div>
 
         <div
+          className="ws-moods-8"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(8, 1fr)",

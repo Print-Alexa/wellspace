@@ -66,7 +66,7 @@ export default function HabitTrackerScreen({ user, onNavigate }) {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div className="ws-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {[
           { label: "Today", value: `${doneToday}/${habits.length}`, icon: TrendingUp, color: C.clay, tone: "butter" },
           { label: "Best streak", value: `${bestStreak}d`, icon: Flame, color: C.gold, tone: "pink" },
@@ -218,6 +218,7 @@ export default function HabitTrackerScreen({ user, onNavigate }) {
                   <button
                     onClick={() => setConfirmRemove(h)}
                     aria-label={`Remove ${meta.label}`}
+                    className="ws-habit-trash"
                     style={{ width: 30, height: 30, borderRadius: 10, border: "none", background: "transparent", color: C.faint, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.16s, color 0.16s, background 0.16s" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = 1;

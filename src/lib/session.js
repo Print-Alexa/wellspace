@@ -36,6 +36,7 @@ export function emptySession(overrides = {}) {
     posts: [], // user's own community posts
     savedCards: [], // fortune card ids the user kept
     partner: null, // { id, name, pairedAt, goals, messages }
+    seekPartner: false, // advertising as available for a partner
 
     prefs: {
       dailyCard: true,

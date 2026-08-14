@@ -287,6 +287,7 @@ export default function OnboardingScreen({ onComplete }) {
               </p>
             </div>
             <div
+              className="ws-stack"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
@@ -399,6 +400,7 @@ export default function OnboardingScreen({ onComplete }) {
               </p>
             </div>
             <div
+              className="ws-moods-4"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",

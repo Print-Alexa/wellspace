@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Send,
   Flame,
@@ -46,10 +46,30 @@ const STEPS = [
 
 export default function AccountabilityPartnerScreen({ user }) {
   const [phase, setPhase] = useState("idle"); // idle | searching | no-match
-  const partner = user?.partner;
+  const [partner, setPartner] = useState(user?.partner || null);
   const [messages, setMessages] = useState(partner?.messages || []);
   const [goals, setGoals] = useState(partner?.goals || []);
   const [draft, setDraft] = useState("");
+
+  // When the screen opens, pull the latest shared state — someone may have
+  // matched you while you were away on another device.
+  const hasPartnerRef = useRef(!!partner);
+  useEffect(() => {
+    let live = true;
+    db.refreshUser().then((u) => {
+      if (!live || hasPartnerRef.current) return;
+      const p = u?.partner || null;
+      if (p) {
+        hasPartnerRef.current = true;
+        setPartner(p);
+        setMessages(p.messages || []);
+        setGoals(p.goals || []);
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
   const pairedDays = partner
     ? Math.max(
         1,
@@ -61,14 +81,19 @@ export default function AccountabilityPartnerScreen({ user }) {
   const search = async () => {
     setPhase("searching");
     try {
-      const foundPartner = await db.findPartner();
-      if (foundPartner) {
-        db.setPartner(foundPartner);
-        setPhase("idle");
-        window.location.reload(); // Refresh to show the new partner
-      } else {
-        setPhase("no-match");
+      // Listen for a short window — the other person's "I'm looking" signal
+      // can land a moment after they tap the button.
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const foundPartner = await db.findPartner();
+        if (foundPartner) {
+          db.setPartner(foundPartner);
+          setPhase("idle");
+          window.location.reload(); // Refresh to show the new partner
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 2500));
       }
+      setPhase("no-match");
     } catch {
       setPhase("no-match");
     }
@@ -241,6 +266,7 @@ export default function AccountabilityPartnerScreen({ user }) {
           <Card style={{ padding: 28 }}>
             <SectionHead title="How it works" />
             <div
+              className="ws-stack"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
@@ -443,6 +469,7 @@ export default function AccountabilityPartnerScreen({ user }) {
       </Card>
 
       <div
+        className="ws-stack"
         style={{
           display: "grid",
           gridTemplateColumns: "3fr 2fr",

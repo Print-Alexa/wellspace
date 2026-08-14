@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Flame, Heart, Sparkles, MoreHorizontal, X } from "lucide-react";
 import { C, serif, sans, script, grain, bgGradient } from "../constants";
 import VennLogo from "../components/VennLogo";
@@ -27,6 +27,18 @@ const TAB_MORE = NAV.filter((n) => !TAB_MAIN.some((t) => t.id === n.id)); // com
 export default function Dashboard({ screen, onNavigate, onSignOut }) {
   const [version, setVersion] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Pull the latest shared state on entry — a partner may have matched you
+  // (or someone replied to your post) while you were away.
+  useEffect(() => {
+    let live = true;
+    db.refreshUser().then((u) => {
+      if (live && u) setVersion((v) => v + 1);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const user = db.getUser();
   const go = (id) => {

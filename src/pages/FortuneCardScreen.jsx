@@ -40,6 +40,7 @@ export default function FortuneCardScreen({ user, onNavigate }) {
 
   return (
     <div
+      className="ws-fortune"
       style={{
         minHeight: "calc(100vh - 40px)",
         borderRadius: 28,

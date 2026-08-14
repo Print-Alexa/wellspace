@@ -73,6 +73,7 @@ export default function AuthScreen({ onAuth, onBack }) {
     <div style={{ minHeight: "100vh", display: "flex", fontFamily: sans, background: `${grain}, ${C.cream}`, backgroundSize: "200px, auto" }}>
       {/* ── Left: photo panel ── */}
       <div
+        className="ws-auth-photo"
         style={{
           flex: 1,
           position: "relative",
@@ -130,7 +131,7 @@ export default function AuthScreen({ onAuth, onBack }) {
       </div>
 
       {/* ── Right: the two ways in ── */}
-      <div style={{ width: "min(480px, 100%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 40px", overflowY: "auto", position: "relative" }}>
+      <div className="ws-auth-panel" style={{ width: "min(480px, 100%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 40px", overflowY: "auto", position: "relative" }}>
         <Aura tone="gold" size={420} top="-100px" right="-140px" />
         <Aura tone="sage" size={360} bottom="-80px" left="-120px" />
         <button

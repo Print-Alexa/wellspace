@@ -204,6 +204,7 @@ export default function DashboardScreen({ user, onNavigate }) {
 
       {/* Top row: mood + fortune */}
       <div
+        className="ws-stack"
         style={{
           display: "grid",
           gridTemplateColumns: "1.6fr 1fr",
@@ -645,6 +646,7 @@ export default function DashboardScreen({ user, onNavigate }) {
 
       {/* Bottom row: community + partner */}
       <div
+        className="ws-stack"
         style={{
           display: "grid",
           gridTemplateColumns: "1.5fr 1fr",
